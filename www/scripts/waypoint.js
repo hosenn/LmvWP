@@ -1,5 +1,12 @@
+/**
+ *  Data class for the pins. This class is instantiated as the data management object 
+ *  for the pins on viewer, it deals with localStorage in browser for persistency.
+ *  @class
+ *  @param {String} model - Name string for current model in the viewer
+ *  @constructor
+ */
 
-    //  Class for pin data, each pin contains an id, a label and its position 
+    //  constructor for pin data, each pin contains an id, a label and its position 
     //  in 3d world, and is associated with a viewstate object by its id
 function ViewerPin(model) {
     this.pinobjs = [];
@@ -103,13 +110,13 @@ ViewerPin.prototype.updateLocalStorage = function() {
 
 
 
-var _viewerMain;
-var _viewerPin;
+var _viewerMain;    // LMV viewer
+var _viewerPin;     // data object for the pins
 
-var _pinTable;
-var _pinLayer;
+var _pinTable;      // table list for the pins
+var _pinLayer;      // pin layer on top of the viewer
 
-var _shouldAddNewPin = false;
+var _pinLayerActivated = false;
 
 
     // initialize the data and view panel for presentation
@@ -154,12 +161,13 @@ function uninitializePinPanel() {
     
     _viewerPin = null;
     _viewerMain = null;
-    _shouldAddNewPin = false;
+    _pinLayerActivated = false;
 }
+
 
     // called before creating a new pin, mark the overlay on the viewer canvas
     // responsive to get the location of the new pin when user clicks
-function prepareForAddNewPin() {
+function activatePinLayer() {
 
         // change the pointer events of the overlay from none to visible
     d3.select("#"+_pinLayer)
@@ -167,7 +175,18 @@ function prepareForAddNewPin() {
         .style("cursor", "pointer");
 
         // mark ready to receive click event on the viewer to create new pin
-    _shouldAddNewPin = true;
+    _pinLayerActivated = true;
+}
+
+    // called after a new pin is added to the layer
+function deactivatePinLayer() {
+
+        // disable canvas pointer events
+    d3.select("#"+_pinLayer)
+        .style("pointer-events", "none");
+
+        // end editing mode done,  mouse click event should be normal on the viewer
+    _pinLayerActivated = false;
 }
 
     // creating a new pin, including the data and its relative visual components
@@ -193,7 +212,7 @@ function createNewPin(client, world, label) {
     
         // update the pin data
     var curViewerState = _viewerMain.getState(optionsFilter);  
-    console.log(curViewerState);
+    // console.log(curViewerState);
     _viewerPin.addPin(divid, world, label, curViewerState); 
 
         // update the pin ui
@@ -205,10 +224,33 @@ function createNewPin(client, world, label) {
 
 }
 
-    // transform array to THREE.Vector3
-function positionToVector3(position) {
-    return new THREE.Vector3(parseFloat(position[0]), parseFloat(position[1]), parseFloat(position[2]));
+    // calculate the 2D position for the new pin to be added
+    // should only work after activatePinLayer is called
+function handleViewerClick(evt) {
+
+    if (_pinLayerActivated) {
+
+        var viewport = _viewerMain.navigation.getScreenViewport();
+            
+            // calculate  relative positon on the canvas, not in window
+        var clientPos =  {
+            x: evt.clientX - viewport.left,
+            y: evt.clientY - viewport.top
+        };
+            // get normalized positon on canvas
+        var normedpos = {
+            x: (evt.clientX - viewport.left) / viewport.width,
+            y: (evt.clientY - viewport.top) / viewport.height
+        };
+
+            // first to see if the clicked positon is hit on an object of viewer
+        var hitPoint = _viewerMain.utilities.getHitPoint(normedpos.x, normedpos.y);
+        if (hitPoint === null)
+            hitPoint = _viewerMain.navigation.getWorldPoint(normedpos.x, normedpos.y);
+        createNewPin(clientPos, hitPoint, "undefined");        
+    }
 }
+
 
     // handle pin click, transit to its specific viewport and setup the headsup display
 function viewPinClicked(evt) {
@@ -261,6 +303,11 @@ function updatePinsOnView() {
     });
 }
 
+    // transform array to THREE.Vector3
+function positionToVector3(position) {
+    return new THREE.Vector3(parseFloat(position[0]), parseFloat(position[1]), parseFloat(position[2]));
+}
+
     // transform position in 3d world to client coordinate
 function worldToClient(position, camera) {
     var p = new THREE.Vector4();
@@ -287,33 +334,6 @@ function worldToClient(position, camera) {
     return point;
 }
 
-    // calculate the 2D position for the new pin to be added
-    // should only work under editing mode, i.e. after prepareForAddNewPin is called
-function handleViewerClick(evt) {
-
-    if (_shouldAddNewPin) {
-
-        var viewport = _viewerMain.navigation.getScreenViewport();
-            
-            // calculate  relative positon on the canvas, not in window
-        var clientPos =  {
-            x: evt.clientX - viewport.left,
-            y: evt.clientY - viewport.top
-        };
-            // get normalized positon on canvas
-        var normedpos = {
-            x: (evt.clientX - viewport.left) / viewport.width,
-            y: (evt.clientY - viewport.top) / viewport.height
-        };
-
-            // first to see if the clicked positon is hit on an object of viewer
-        var hitPoint = _viewerMain.utilities.getHitPoint(normedpos.x, normedpos.y);
-        if (hitPoint === null)
-            hitPoint = _viewerMain.navigation.getWorldPoint(normedpos.x, normedpos.y);
-        createNewPin(clientPos, hitPoint, "undefined");        
-    }
-
-}
 
     // random id generator for new pins
 function getUUID() {
@@ -337,10 +357,25 @@ function startTour(index) {
     }
 }
 
+
+
+
+
+
+
+    // NOTE: functions below handles the UI work, including creating the pin layer 
+    // on top of the viewer canvas and the pin table list in the given div, inserting
+    // a new row in the table, as well as adding a new pin on the layer.
+
+
+
+    // init pin table in the given div
 function initPinTablelist(tableDiv) {
 
+        // init table header
     var tableHeader = $('<div/>').attr("class", "pin-table-header").appendTo(tableDiv);
 
+        // create start tour button
     tableHeader.append(
         $('<button />', {
             "class": "pin-table-button",
@@ -355,17 +390,19 @@ function initPinTablelist(tableDiv) {
         })
     );
 
+        // create add pin button
     tableHeader.append(
         $('<button />', {
             "class": "pin-table-button",
             "type" : "button",
             text: "Add Pin",
             click: function (e) {
-                prepareForAddNewPin();
+                activatePinLayer();
             }
         })
     );
 
+        // create hide pin checkbox
     tableHeader.append(
         $('<input />', {
             "type" : "checkbox",
@@ -375,71 +412,99 @@ function initPinTablelist(tableDiv) {
         })
     );
 
+        // create label for checkbox
     tableHeader.append(
         $('<label />', {
             text: "Hide Pins",
         })
     );
 
+        // init table list
     var tablelist = $('<div/>').attr("class", "pin-table-list").appendTo(tableDiv)[0];
 
+        // insert the existing points to the table
     _viewerPin.each(function (pinid, label, position) {
         pushPinToTableList(pinid, label, tablelist);
     });
 
 }
 
-    // add a pin row to the table list
+    // add a new row to the table list
 function pushPinToTableList(pinid, pinlabel, table) {
 
     var _currentRow;
 
+        // create a new table row
     var row = $('<div/>')
         .attr("id", "row" + pinid)
         .attr("class", "pin-table-list-cell")
         .on("mouseover", function (e) {
+
+                // show delete and reorder button
             $(this).children(":first").css("display", "inline-block");
             $(this).children(":last").css("display", "inline-block");
 
+                // hover related pin on layer
             var pinid = this.id.substring(3, this.id.length);
             $("#"+pinid).mouseover();
+
         })
         .on("mouseout", function (e) {
+
+                // hide delete and reorder button
             $(this).children(":first").css("display", "none");
             $(this).children(":last").css("display", "none");
 
+                // hover out related pin
             var pinid = this.id.substring(3, this.id.length);
             $("#"+pinid).mouseout();
+
         })
         .on("click", function (e) {
+
+                // record current row
             var prevRow = _currentRow;
             _currentRow = $(this).attr("id");
 
+                // deselect previous row
             if (typeof(prevRow) !== "undefined")
                 $("#"+prevRow).mouseout();
+
+                // click related pin on layer
             var pinid = this.id.substring(3, this.id.length);
             $("#"+pinid).click();
+
         })
         .appendTo(table);
 
+
+        // add delete button to current row
     var deletebtn = $('<div/>')
         .attr("class", "cell-btn icon icon-cross")
         .on("click", function (e) {
+
             var parentRow = $(this).parent()[0];
             var pinid = parentRow.id.substring(3, parentRow.id.length);
             var table = parentRow.parentNode;
 
+                // remove row from table and pin from canvas layer
             table.removeChild(parentRow);
             d3.select("#"+pinid).remove();
 
+                // remove from the data object
             _viewerPin.removePin(pinid);
+
         })
         .appendTo(row);
 
+
+        // add label to current row
     var label = $('<div/>')
         .attr("class", "cell-label")
         .text(pinlabel)
         .on("dblclick", function (e) {
+
+                // create editing text field
             var editableLabel = $('<input />')
                 .attr("type", "text")
                 .attr("placeholder", $(this).text())
@@ -448,24 +513,36 @@ function pushPinToTableList(pinid, pinlabel, table) {
                     "font-size":"16px", 
                     "height":"100%"
                 })
-                .on("blur", function (e) {
+                .on("blur", function (e) {  // editing done
+
                     var parentLabel = $(this).parent();
-                    parentLabel.text($(this).val());
 
-                    var rowid = parentLabel.parent().attr("id");
-                    var pinid = rowid.substring(3, rowid.length);
-                    var pinObj = _viewerPin.getPinObj(pinid);
-                    pinObj.label = $(this).val();
+                    if ($(this).val().trim().length > 0) {
+                        parentLabel.text($(this).val());
 
+                            // set the label in the data object
+                        var rowid = parentLabel.parent().attr("id");
+                        var pinid = rowid.substring(3, rowid.length);
+                        var pinObj = _viewerPin.getPinObj(pinid);
+                        pinObj.label = $(this).val();
+                    } else {
+                        parentLabel.text($(this).attr("placeholder"));
+                    }
+
+                        // remove editing text field
                     $(this).remove();
+
                 })
                 .on("keydown", function (e) {
-                    if (e.keyCode == 13)
+
+                    if (e.keyCode == 13)    // detect enter key
                         $(this).blur();
+
                 });
 
-            $(this).empty().append(editableLabel);
-            editableLabel.focus();
+            $(this).empty().append(editableLabel);  // add editing text field
+            editableLabel.focus();  // activate text field for editing
+
         })
         .appendTo(row);
 
@@ -473,10 +550,12 @@ function pushPinToTableList(pinid, pinlabel, table) {
     var _prev_x = 0;
     var _prev_y = 0;
 
+        // add reorder button to current row
     var orderbtn = $('<div/>')
         .attr("class", "cell-btn icon icon-menu")
         .appendTo(row)
         .on("mousedown", function (e) {
+
             _prev_x = e.clientX;
             _prev_y = e.clientY;
             _selected = this.parentNode;
@@ -486,7 +565,9 @@ function pushPinToTableList(pinid, pinlabel, table) {
                 "z-index": 999
             });
 
+                // handle mouse dragging
             var moverow = function (evt) {
+
                 if (_selected === null)
                     return;
                 var next_left = _selected.offsetLeft + evt.clientX - _prev_x;
@@ -495,12 +576,16 @@ function pushPinToTableList(pinid, pinlabel, table) {
                     "left": next_left + "px",
                     "top": next_top + "px"
                 });
+
                 _prev_x = evt.clientX;
                 _prev_y = evt.clientY;
+
             };
             $(document).on("mousemove", moverow);
 
+                // handle mouse up and set final row index
             var setrow = function (evt) {
+
                 if (_selected === null)
                     return false;
                 var pinid = _selected.id.substring(3, _selected.id.length);
@@ -511,6 +596,7 @@ function pushPinToTableList(pinid, pinlabel, table) {
                     "position": "static",
                     "z-index": "0"
                 });
+
                 parent.removeChild(_selected);
                 parent.insertBefore(_selected, parent.children[index]);
                 $(_selected).css({
@@ -523,18 +609,21 @@ function pushPinToTableList(pinid, pinlabel, table) {
                 $(document).off("mousemove", moverow);
                 $(document).off("mouseup", setrow);
 
+                    // also reorder the pins in the data object
                 _viewerPin.reorder(pinid, index);
 
-                return false; 
+                return false;
+
             };
             $(document).on("mouseup", setrow);
 
             return false;
+
         });
 
 }
 
-
+    // init pin layer on top of the viewer canvas
 function initPinOverlay() {
     
     _pinLayer = "pushpinOverlay";
@@ -594,7 +683,7 @@ function initPinOverlay() {
     return svg;
 }
 
-    // add a pin to the overlay
+    // add a new pin to the layer
 function pushPinToOverlay(pinid, client) {
 
         // draw a circle pin in d3
@@ -614,10 +703,5 @@ function pushPinToOverlay(pinid, client) {
             d3.select(this).style("fill", "#c66"); 
         });
 
-        // disable canvas pointer events
-    d3.select("#"+_pinLayer)
-        .style("pointer-events", "none");
-
-        // end editing mode done,  mouse click event should be normal on the viewer
-    _shouldAddNewPin = false;
+    deactivatePinLayer();
 }

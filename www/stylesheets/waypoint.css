@@ -23,21 +23,6 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-.icon-cost:before {
-  content: "\e602";
-}
-.icon-chart:before {
-  content: "\e603";
-}
-.icon-report:before {
-  content: "\e604";
-}
-.icon-theme:before {
-  content: "\e605";
-}
-.icon-play:before {
-  content: "\e606";
-}
 .icon-menu:before {
   content: "\e600";
 }
@@ -48,7 +33,6 @@
 .icon-large {
   font-size: 1.4em;
   vertical-align: -15%; }
-
 
 .pin-table-button {
 	border: 1px solid #bbb;
@@ -108,7 +92,8 @@
 		content: "";
 		height: 0.5px;
 		background: linear-gradient(to left,  rgba(233,233,233,0) 0%,rgba(227,227,227,1) 50%,rgba(233,233,233,0) 100%);
-		display: block;}
+		display: block;
+	}
 
 .cell-label {
     text-align: center;
@@ -118,7 +103,8 @@
     line-height: inherit;
     vertical-align: middle;
     font-size: 18px;
-    cursor: default;}
+    cursor: default;
+}
 
 .cell-btn {
 	text-align: center;
@@ -129,4 +115,5 @@
 	vertical-align: middle;
 	cursor: pointer;}
 	.cell-btn:hover {
-		color: rgb(199, 99, 99);}
+		color: rgb(199, 99, 99);
+	}
