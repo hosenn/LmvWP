@@ -1,0 +1,132 @@
+@font-face {
+  font-family: 'icomoon';
+  src:url('../fonts/icomoon.eot?f2xm0g');
+  src:url('../fonts/icomoon.eot?#iefixf2xm0g') format('embedded-opentype'),
+    url('../fonts/icomoon.ttf?f2xm0g') format('truetype'),
+    url('../fonts/icomoon.woff?f2xm0g') format('woff'),
+    url('../fonts/icomoon.svg?f2xm0g#icomoon') format('svg');
+  font-weight: normal;
+  font-style: normal;
+}
+
+.icon {
+  font-family: 'icomoon';
+  speak: none;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+
+  /* Better Font Rendering =========== */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-cost:before {
+  content: "\e602";
+}
+.icon-chart:before {
+  content: "\e603";
+}
+.icon-report:before {
+  content: "\e604";
+}
+.icon-theme:before {
+  content: "\e605";
+}
+.icon-play:before {
+  content: "\e606";
+}
+.icon-menu:before {
+  content: "\e600";
+}
+.icon-cross:before {
+  content: "\e601";
+}
+
+.icon-large {
+  font-size: 1.4em;
+  vertical-align: -15%; }
+
+
+.pin-table-button {
+	border: 1px solid #bbb;
+	background: #ffffff;
+	padding: 8px 12px;
+	min-width: 90px;
+	min-height: 25px;
+	margin-right: 8px;
+	color: #000000;
+	font-size: 14px;
+	vertical-align: middle;
+	cursor: pointer;
+	-webkit-border-radius: 4px;
+	-moz-border-radius: 4px;
+	border-radius: 4px;}
+	.pin-table-button:hover {
+		background: #ededed;
+	}
+
+.pin-table-header {
+	padding: 20px 15px;
+	width: calc(100%-30px);
+	height: 55px;
+	line-height: 55px;
+	vertical-align: middle;
+	text-align: center;
+	display: block;
+}
+
+.pin-table-list {
+	width: 100%;
+	display: block;
+	position: relative;
+	margin-top: 10px;
+}
+
+.pin-table-list-cell {
+    height: 40px;
+    line-height: 40px;
+    width: 100%;
+    text-align: center;
+    vertical-align: middle;
+    background-color: white;
+    margin-top: 1px;
+    padding-left: 5px;
+    padding-right: 5px;}
+    .pin-table-list-cell:active {
+		background-color: white;
+		color: black;
+		-webkit-box-shadow: 0 8px 6px -6px gray;
+		-moz-box-shadow: 0 8px 6px -6px gray;
+		box-shadow: 0 8px 6px -6px gray;}
+    .pin-table-list-cell:hover {
+		background-color: #EFEFEF;
+		color: rgb(134,134,134);}
+    .pin-table-list-cell:after {
+		content: "";
+		height: 0.5px;
+		background: linear-gradient(to left,  rgba(233,233,233,0) 0%,rgba(227,227,227,1) 50%,rgba(233,233,233,0) 100%);
+		display: block;}
+
+.cell-label {
+    text-align: center;
+    display: inline-block;
+    width: 70%;
+    height: inherit;
+    line-height: inherit;
+    vertical-align: middle;
+    font-size: 18px;
+    cursor: default;}
+
+.cell-btn {
+	text-align: center;
+	display: none;
+	width: 10%;
+	height: inherit;
+	line-height: inherit;
+	vertical-align: middle;
+	cursor: pointer;}
+	.cell-btn:hover {
+		color: rgb(199, 99, 99);}

@@ -1,2 +1,2 @@
 # LmvWP
-LMV Waypoints
+LMV Waypoints Extension
